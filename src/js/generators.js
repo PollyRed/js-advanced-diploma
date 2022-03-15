@@ -1,5 +1,4 @@
-import Character from "./Character";
-import Team from "./Team";
+import Team from './Team';
 
 /**
  * Generates random characters
