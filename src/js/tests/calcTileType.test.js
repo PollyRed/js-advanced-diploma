@@ -11,7 +11,7 @@ test.each([
   [59, 'bottom'],
   [10, 'center'],
 ])(
-  'tile type test',
+  'Определение типа клетки по индексу',
   (index, expected) => {
     const boardSize = 8;
     const result = calcTileType(index, boardSize);

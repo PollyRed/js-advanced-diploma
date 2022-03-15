@@ -1,3 +1,6 @@
+import Character from "./Character";
+import Team from "./Team";
+
 /**
  * Generates random characters
  *
@@ -6,9 +9,15 @@
  * @returns Character type children (ex. Magician, Bowman, etc)
  */
 export function* characterGenerator(allowedTypes, maxLevel) {
-  // TODO: write logic here
+  for (const AllowedType of allowedTypes) {
+    yield new AllowedType((Math.random() % maxLevel) + 1);
+  }
 }
 
 export function generateTeam(allowedTypes, maxLevel, characterCount) {
-  // TODO: write logic here
+  const team = new Team();
+  for (let i = 0; i < characterCount; i += 1) {
+    team.addMember(characterGenerator(allowedTypes, maxLevel));
+  }
+  return team;
 }
