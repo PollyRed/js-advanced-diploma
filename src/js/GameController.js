@@ -26,6 +26,8 @@ export default class GameController {
   constructor(gamePlay, stateService) {
     this.gamePlay = gamePlay;
     this.stateService = stateService;
+    this.playerTeam = [];
+    this.computerTeam = [];
     this.positions = [];
     this.gameState = new GameState();
   }
@@ -39,10 +41,10 @@ export default class GameController {
     const computerInitPositions = generatePositions(
       2, this.gamePlay.boardSize, getInitComputerPosition,
     );
-    const playerTeam = generatePositionedTeam(playerAllowedTypes, 1, 2, playerInitPositions);
-    const computerTeam = generatePositionedTeam(computerAllowedTypes, 1, 2, computerInitPositions);
+    this.playerTeam = generatePositionedTeam(playerAllowedTypes, 1, 2, playerInitPositions);
+    this.computerTeam = generatePositionedTeam(computerAllowedTypes, 1, 2, computerInitPositions);
 
-    this.positions = playerTeam.concat(computerTeam);
+    this.positions = this.playerTeam.concat(this.computerTeam);
 
     this.gamePlay.redrawPositions(this.positions);
     // TODO: add event listeners to gamePlay events
@@ -70,10 +72,80 @@ export default class GameController {
   }
 
   isCharacterCanAttack(index) {
-    return Math.abs(this.gameState.selectedCharacter.position - index) === 1
-           || Math.abs(this.gameState.selectedCharacter.position - index) === 7
-           || Math.abs(this.gameState.selectedCharacter.position - index) === 8
-           || Math.abs(this.gameState.selectedCharacter.position - index) === 9;
+    if (this.gameState.selectedCharacter != null) {
+      const size = this.gamePlay.boardSize;
+      const characterType = this.gameState.selectedCharacter.character.type;
+      const characterPosition = this.gameState.selectedCharacter.position;
+      const characterRow = Math.floor(characterPosition / size);
+      const currentRow = Math.floor(index / size);
+      const distance = Math.abs((characterPosition % 8) - (index % 8));
+
+      if (characterPosition === index) {
+        return false;
+      }
+
+      if (characterType === 'swordsman' || characterType === 'undead') {
+        return Math.abs(currentRow - characterRow) <= 1
+        && distance <= 1 && distance >= 0 && distance < size;
+      }
+      if (characterType === 'bowman' || characterType === 'vampire') {
+        return Math.abs(currentRow - characterRow) <= 2
+        && distance <= 2 && distance >= 0 && distance < size;
+      }
+      if (characterType === 'magician' || characterType === 'daemon') {
+        return Math.abs(currentRow - characterRow) <= 4
+        && distance <= 4 && distance >= 0 && distance < size;
+      }
+    }
+
+    return false;
+  }
+
+  isCharacterCanMove(index) {
+    if (this.gameState.selectedCharacter != null) {
+      const size = this.gamePlay.boardSize;
+      const characterType = this.gameState.selectedCharacter.character.type;
+      const characterPosition = this.gameState.selectedCharacter.position;
+      const characterRow = Math.floor(characterPosition / size);
+      const currentRow = Math.floor(index / size);
+      const distance = Math.abs((characterPosition % 8) - (index % 8));
+
+      if (characterPosition === index) {
+        return false;
+      }
+
+      if (characterType === 'swordsman' || characterType === 'undead') {
+        return Math.abs(currentRow - characterRow) <= 4
+        && distance <= 4 && distance >= 0 && distance < size;
+      }
+      if (characterType === 'bowman' || characterType === 'vampire') {
+        return Math.abs(currentRow - characterRow) <= 2
+        && distance <= 2 && distance >= 0 && distance < size;
+      }
+      if (characterType === 'magician' || characterType === 'daemon') {
+        return Math.abs(currentRow - characterRow) <= 1
+        && distance <= 1 && distance >= 0 && distance < size;
+      }
+    }
+
+    return false;
+  }
+
+  static calculateDamage(attacker, target) {
+    return Math.max(attacker.attack - target.defence, attacker.attack * 0.1);
+  }
+
+  computerTurn() {
+    for (const computerCharacter of this.computerTeam) {
+      for (const playerCharacter of this.playerTeam) {
+        this.gameState.selectedCharacter = computerCharacter;
+        if (this.isCharacterCanAttack(playerCharacter.position)) {
+          // attack player character and change turn
+        }
+      }
+    }
+
+    // move random computer character
   }
 
   addListeners() {
@@ -84,7 +156,8 @@ export default class GameController {
 
   onCellClick(index) {
     const character = this.getCharacterFromCell(index);
-    if (this.gameState.isPlayerTurn && character !== null) {
+    if (this.gameState.isPlayerTurn && character !== null
+        && this.gameState.selectedCharacter === null) {
       if (GameController.isPlayableCharacter(character.character)) {
         if (this.gameState.selectedCell >= 0) {
           this.gamePlay.deselectCell(this.gameState.selectedCell);
@@ -96,6 +169,39 @@ export default class GameController {
       } else {
         GamePlay.showError('Это неигровой персонаж!');
       }
+    } else if (this.gameState.isPlayerTurn && this.gameState.selectedCharacter !== null
+              && character === null) {
+      const selectedCharacterIndex = this.positions.indexOf(this.gameState.selectedCharacter);
+      const selectedCharacterPosition = this.gameState.selectedCharacter.position;
+
+      if (this.isCharacterCanMove(index)) {
+        this.positions[selectedCharacterIndex].position = index;
+        this.gamePlay.redrawPositions(this.positions);
+        this.gamePlay.deselectCell(selectedCharacterPosition);
+        this.gameState.selectedCharacter = null;
+      }
+    } else if (this.gameState.isPlayerTurn && this.gameState.selectedCharacter !== null
+      && character !== null) {
+      const selectedCharacterPosition = this.gameState.selectedCharacter.position;
+      if (this.isCharacterCanAttack(index)) {
+        const characterIndex = this.positions.indexOf(character);
+        const damage = GameController.calculateDamage(
+          this.gameState.selectedCharacter.character,
+          character.character,
+        );
+
+        this.positions[characterIndex].character.health -= damage;
+
+        this.gamePlay.showDamage(index, damage).then(() => {
+          this.gamePlay.redrawPositions(this.positions);
+          this.gamePlay.deselectCell(selectedCharacterPosition);
+          this.gameState.selectedCharacter = null;
+          if (this.positions[characterIndex].character.health <= 0) {
+            this.positions.splice(characterIndex);
+          }
+          this.gamePlay.redrawPositions(this.positions);
+        });
+      }
     }
   }
 
@@ -105,7 +211,7 @@ export default class GameController {
       if (this.gameState.selectedCell !== -1 && this.gameState.selectedCell !== index) {
         if (GameController.isPlayableCharacter(character.character)) {
           this.gamePlay.setCursor('pointer');
-        } else {
+        } else if (!GameController.isPlayableCharacter(character.character)) {
           if (this.isCharacterCanAttack(index)) {
             this.gamePlay.setCursor('crosshair');
             this.gamePlay.selectCell(index, 'red');
@@ -119,7 +225,7 @@ export default class GameController {
     } else if (character === null
               && this.gameState.selectedCell !== -1
               && this.gameState.selectedCell !== index) {
-      if (this.isCharacterCanAttack(index)) {
+      if (this.isCharacterCanMove(index)) {
         this.gamePlay.setCursor('pointer');
         this.gamePlay.selectCell(index, 'green');
       } else {
