@@ -1,5 +1,6 @@
 export default class GameState {
   constructor() {
+    this.currentLevel = 1;
     this.isPlayerTurn = true;
     this.selectedCell = -1;
     this.selectedCharacter = null;
