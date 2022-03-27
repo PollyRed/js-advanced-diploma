@@ -5,6 +5,8 @@ export default class GameState {
     this.selectedCell = -1;
     this.selectedCharacter = null;
     this.computerMoveDirection = -1;
+    this.positions = [];
+    this.scores = 0;
   }
 
   static from(object) {
