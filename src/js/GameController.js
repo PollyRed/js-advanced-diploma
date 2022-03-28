@@ -250,6 +250,7 @@ export default class GameController {
 
           this.gamePlay.showDamage(playerCharacter.position, damage).then(() => {
             if (this.gameState.positions[playerCharacterIndex].character.health <= 0) {
+              this.gameState.selectedCharacter = null;
               this.gamePlay.deselectCell(playerCharacter.position);
               this.gameState.positions.splice(playerCharacterIndex, 1);
               playerTeam.splice(playerTeam.indexOf(playerCharacter), 1);
