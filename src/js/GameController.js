@@ -202,6 +202,30 @@ export default class GameController {
     return Math.floor(Math.max(attacker.attack - target.defence, attacker.attack * 0.1));
   }
 
+  moveRandomComputerPlayer(computerTeam) {
+    const randomComputerPlayer = computerTeam[Math.floor(Math.random() * computerTeam.length)];
+    const randomCharacterIndex = this.gameState.positions.indexOf(randomComputerPlayer);
+    const positionInRaw = randomComputerPlayer.position % this.gamePlay.boardSize;
+    let playerCanMove = true;
+
+    if (positionInRaw - 1 < 0
+        || this.getCharacterFromCell(randomComputerPlayer.position - 1) != null) {
+      this.gameState.computerMoveDirection = 1;
+      playerCanMove = false;
+    }
+
+    if (positionInRaw + 1 >= this.gamePlay.boardSize
+        || this.getCharacterFromCell(randomComputerPlayer.position + 1) != null) {
+      this.gameState.computerMoveDirection = -1;
+      if (!playerCanMove) {
+        return false;
+      }
+    }
+
+    this.gameState.positions[randomCharacterIndex].position += this.gameState.computerMoveDirection;
+    return true;
+  }
+
   computerTurn() {
     const computerTeam = this.gameState.positions.filter(
       (character) => !GameController.isPlayableCharacter(character),
@@ -241,18 +265,11 @@ export default class GameController {
       }
     }
 
-    const randomComputerPlayer = computerTeam[Math.floor(Math.random() * computerTeam.length)];
-    const randomCharacterIndex = this.gameState.positions.indexOf(randomComputerPlayer);
-
-    if ((randomComputerPlayer.position % this.gamePlay.boardSize) - 1 < 0) {
-      this.gameState.computerMoveDirection = 1;
+    let computerPlayerMoved = false;
+    while (!computerPlayerMoved) {
+      computerPlayerMoved = this.moveRandomComputerPlayer(computerTeam);
     }
 
-    if ((randomComputerPlayer.position % this.gamePlay.boardSize) + 1 >= this.gamePlay.boardSize) {
-      this.gameState.computerMoveDirection = -1;
-    }
-
-    this.gameState.positions[randomCharacterIndex].position += this.gameState.computerMoveDirection;
     this.gamePlay.redrawPositions(this.gameState.positions);
     this.gameState.selectedCharacter = null;
     this.gameState.isPlayerTurn = true;
