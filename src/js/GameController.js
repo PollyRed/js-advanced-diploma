@@ -290,6 +290,10 @@ export default class GameController {
       return;
     }
 
+    if (!this.gameState.isPlayerTurn) {
+      return;
+    }
+
     const character = this.getCharacterFromCell(index);
     if (this.gameState.isPlayerTurn && character !== null) {
       if (GameController.isPlayableCharacter(character)) {
@@ -361,6 +365,10 @@ export default class GameController {
 
   onCellEnter(index) {
     if (this.gameState.currentLevel > 4) {
+      return;
+    }
+
+    if (!this.gameState.isPlayerTurn) {
       return;
     }
 
