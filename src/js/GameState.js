@@ -8,9 +8,4 @@ export default class GameState {
     this.positions = [];
     this.scores = 0;
   }
-
-  static from(object) {
-    // TODO: create object
-    return null;
-  }
 }

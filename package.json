@@ -1,7 +1,7 @@
 {
   "name": "js-advanced-diploma",
   "version": "1.0.0",
-  "description": " ",
+  "description": "[![Build status](https://ci.appveyor.com/api/projects/status/c6a9vhu9ywbg64oj?svg=true)](https://ci.appveyor.com/project/PollyRed/js-advanced-diploma)",
   "main": "index.js",
   "scripts": {
     "start": "webpack-dev-server --open --mode development",
